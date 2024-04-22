@@ -312,16 +312,33 @@ void plot_results(cv::Mat img, std::vector<YoloResults>& results,
 //    cv::waitKey();
 }
 
+/**
+ * 将图片转换为640x640大小，并且保持原始图片的长宽比，不足的地方用黑色填充
+*/
+cv::Mat resize_image(const cv::Mat& img, const cv::Size& target_size) {
+    cv::Mat resized_img;
+    cv::Mat padded_img(target_size, img.type(), cv::Scalar(0));
+    float scale = std::min(static_cast<float>(target_size.width) / img.cols, static_cast<float>(target_size.height) / img.rows);
+    cv::Size new_size = cv::Size(img.cols * scale, img.rows * scale);
+    cv::Mat resized;
+    cv::resize(img, resized, new_size);
+    cv::Rect roi(0, 0, resized.cols, resized.rows);
+    resized.copyTo(padded_img(roi));
+    return padded_img;
+}
 
+cv::Mat resize_image_640(const cv::Mat& img) {
+    return resize_image(img, cv::Size(640, 640));
+}
 
 int main()
 {
-    std::string img_path = "../../images/000000000382.jpg";
-    //const std::img_path& modelPath = "./checkpoints/yolov8n.onnx"; // detection
+    std::string img_path = "./images/bus.jpg";
+    //const std::img_path& modelPath = "./yolov8n.onnx"; // detection
     // vs:
-    //    const std::string& modelPath = "./checkpoints/yolov8n-seg.onnx"; // instance segmentation
+    //    const std::string& modelPath = "./yolov8n-seg.onnx"; // instance segmentation
     // clion:
-    const std::string& modelPath = "../../checkpoints/yolov8n-pose.onnx"; // pose
+    const std::string& modelPath = "./yolov8n-pose.onnx"; // pose
 
     fs::path imageFilePath(img_path);
     fs::path newFilePath = imageFilePath.stem();
@@ -341,6 +358,7 @@ int main()
         std::cerr << "Error: Unable to load image" << std::endl;
         return 1;
     }
+    img = resize_image_640(img);
     AutoBackendOnnx model(modelPath.c_str(), onnx_logid.c_str(), onnx_provider.c_str());
     std::vector<YoloResults> objs = model.predict_once(img, conf_threshold, iou_threshold, mask_threshold, conversion_code);
     std::vector<cv::Scalar> colors = generateRandomColors(model.getNc(), model.getCh());

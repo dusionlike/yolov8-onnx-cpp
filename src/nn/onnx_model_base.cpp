@@ -62,6 +62,31 @@ OnnxModelBase::OnnxModelBase(const char* modelPath, const char* logid, const cha
     #else
         session = Ort::Session(env, modelPath, sessionOptions);  // For Linux (string)
     #endif
+
+#ifdef ONNXRUNTIME_1_11_1
+    Ort::AllocatorWithDefaultOptions allocator;
+    size_t inputNodesNum = session.GetInputCount();
+    size_t OutputNodesNum = session.GetOutputCount();
+    // 获取onnx输入名
+    for (int i = 0; i < inputNodesNum; i++)
+    {
+        inputNodeNames.push_back(session.GetInputName(i, allocator));
+    }
+    // 获取onnx输出名
+    for (int i = 0; i < OutputNodesNum; i++)
+    {
+        outputNodeNames.push_back(session.GetOutputName(i, allocator));
+    }
+
+    model_metadata = session.GetModelMetadata();
+    int64_t num_keys;
+    char** keys = model_metadata.GetCustomMetadataMapKeys(allocator, num_keys); // 获取自定义元数据键
+    for (int64_t i = 0; i < num_keys; ++i) {
+        char* value = model_metadata.LookupCustomMetadataMap(keys[i], allocator); // 获取每个键对应的值
+        // 使用键和值
+        metadata[keys[i]] = value;
+    }
+#else
     //session = Ort::Session(env)
     // https://github.com/microsoft/onnxruntime/issues/14157
     //std::vector<const char*> inputNodeNames; //
@@ -112,6 +137,7 @@ OnnxModelBase::OnnxModelBase(const char* modelPath, const char* logid, const cha
             metadata[key] = std::string(raw_metadata_value);
         }
     }
+#endif
 
     // initialize cstr
     for (const std::string& name : outputNodeNames) {
