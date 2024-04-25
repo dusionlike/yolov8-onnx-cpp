@@ -334,11 +334,11 @@ cv::Mat resize_image_640(const cv::Mat& img) {
 int main()
 {
     std::string img_path = "./images/bus.jpg";
-    //const std::img_path& modelPath = "./yolov8n.onnx"; // detection
+    const std::string& modelPath = "./yolov8n.onnx"; // detection
     // vs:
     //    const std::string& modelPath = "./yolov8n-seg.onnx"; // instance segmentation
     // clion:
-    const std::string& modelPath = "./yolov8n-pose.onnx"; // pose
+    // const std::string& modelPath = "./yolov8n-pose.onnx"; // pose
 
     fs::path imageFilePath(img_path);
     fs::path newFilePath = imageFilePath.stem();
